@@ -38,3 +38,58 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  producer:
+    build: .
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    volumes:
+      - .:/app
+    entrypoint: ["python", "run_producer_cli.py"]
+
+  flink-job:
+    build: .
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      STREAMING_DB_HOST: postgres
+      STREAMING_DB_PORT: "5432"
+      STREAMING_DB_NAME: streaming
+      STREAMING_DB_USER: stream
+      STREAMING_DB_PASSWORD: stream
+    volumes:
+      - .:/app
+      # /app/lib e criado durante o build da imagem (Dockerfile baixa os
+      # connector jars do Flink ali). O bind mount acima (.:/app) sobrescreve
+      # todo o /app com o checkout do host, que nao tem esses jars -- isso
+      # quebrava a descoberta do connector 'kafka' em runtime (Task 8).
+      # Este named volume fica "por cima" do bind mount so em /app/lib e o
+      # Docker o popula com o conteudo da imagem no primeiro uso, preservando
+      # os jars.
+      - flink-libs:/app/lib
+    entrypoint: ["python", "run_jobs_cli.py"]
+
+  test:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      STREAMING_DB_HOST: postgres
+      STREAMING_DB_PORT: "5432"
+      STREAMING_DB_NAME: streaming
+      STREAMING_DB_USER: stream
+      STREAMING_DB_PASSWORD: stream
+    volumes:
+      - .:/app
+    entrypoint: ["pytest"]
+
+volumes:
+  flink-libs:
