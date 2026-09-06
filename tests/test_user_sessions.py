@@ -1,5 +1,5 @@
 from streaming.flink_env import create_batch_env
-from streaming.queries import USER_SESSIONS_SQL
+from streaming.queries import USER_SESSIONS_SQL_BATCH
 from tests.helpers import make_evento, register_clickstream_fixture
 
 
@@ -12,7 +12,7 @@ def test_session_splits_on_inactivity_gap(tmp_path):
     ]
     register_clickstream_fixture(t_env, tmp_path, rows)
 
-    with t_env.sql_query(USER_SESSIONS_SQL).execute().collect() as results:
+    with t_env.sql_query(USER_SESSIONS_SQL_BATCH).execute().collect() as results:
         rows_out = list(results)
 
     assert len(rows_out) == 2
@@ -26,7 +26,7 @@ def test_session_does_not_mix_different_users(tmp_path):
     ]
     register_clickstream_fixture(t_env, tmp_path, rows)
 
-    with t_env.sql_query(USER_SESSIONS_SQL).execute().collect() as results:
+    with t_env.sql_query(USER_SESSIONS_SQL_BATCH).execute().collect() as results:
         rows_out = list(results)
 
     assert len(rows_out) == 2
