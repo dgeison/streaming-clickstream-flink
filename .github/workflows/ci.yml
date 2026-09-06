@@ -19,6 +19,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      PYTHONPATH: ${{ github.workspace }}
       STREAMING_DB_HOST: localhost
       STREAMING_DB_PORT: "5432"
       STREAMING_DB_NAME: streaming
