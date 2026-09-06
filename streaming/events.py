@@ -72,6 +72,12 @@ TRANSICOES = {
 }
 
 
+# Nota: este `session_id` eh um conceito do gerador (um id fixo por usuario
+# durante toda a execucao do producer), diferente das sessoes calculadas
+# pela janela SESSION do Flink em streaming/jobs.py (que fecham e abrem
+# dinamicamente a cada 30s de inatividade, entao um mesmo usuario pode ter
+# varias sessoes Flink dentro de uma unica execucao do producer). Os dois
+# nao tem relacao entre si -- nenhuma query usa este campo.
 def new_user_state(rng):
     return {
         "session_id": None,

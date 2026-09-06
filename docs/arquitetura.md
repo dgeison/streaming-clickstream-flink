@@ -117,10 +117,18 @@ duas sintaxes diretamente contra o motor real. Como os testes bounded
 rodam em modo batch (`create_batch_env`, decisão deliberada para serem
 rápidos e não dependerem de Kafka), a query nativa de sessão nunca
 poderia ser exercitada nos testes se fosse a única versão existente — por
-isso a técnica gap-and-islands foi desenvolvida como equivalente
-funcional, verificada linha a linha contra os mesmos casos de teste
-(divisão de sessão por gap de inatividade, isolamento entre usuários
-diferentes).
+isso a técnica gap-and-islands foi desenvolvida como uma segunda
+implementação da mesma regra de negócio (fecha sessão após 30s de
+inatividade), verificada contra os mesmos casos de teste na divisão de
+sessão por gap de inatividade e no isolamento entre usuários diferentes.
+**Atenção**: as duas queries agrupam eventos em sessões da mesma forma,
+mas não emitem o mesmo `sessao_fim` — a versão streaming usa
+`window_end` do Flink (último evento + o gap de 30s), enquanto a versão
+batch usa `MAX(event_time)` (o timestamp do último evento, sem o gap).
+Nenhum teste compara os dois valores diretamente (os testes de sessão só
+verificam contagem de linhas e conjunto de `user_id`), então trate as duas
+queries como equivalentes na *lógica de agrupamento*, não como
+bit-a-bit idênticas.
 
 Isso poderia sugerir que a produção usa uma lógica "não testada" — não é
 bem assim. A sintaxe nativa TVF foi verificada compilando com sucesso em

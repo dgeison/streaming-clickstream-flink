@@ -128,8 +128,15 @@ $ psql ... -c "SELECT * FROM sessoes_usuario ORDER BY sessao_inicio LIMIT 10;"
 ```
 
 A tabela completa (45 sessões) teve casos como `USR-0024`, que acumulou 7
-ações e 1 compra de R$399,90 numa única sessão contínua de ~64s — o gap de
-inatividade de 30s foi respeitado corretamente contra dados reais do Kafka.
+ações e 1 compra de R$399,90 numa janela de sessão de ~64s — o gap de
+inatividade de 30s foi respeitado corretamente contra dados reais do
+Kafka. Importante: `sessao_fim` é o timestamp do **último evento + o gap
+de 30s** (é assim que o Flink define o fim de uma janela SESSION), não o
+timestamp do último evento em si — então dos ~64s, cerca de 30s são o gap
+de "espera para ver se o usuário volta", não atividade real. Isso fica
+óbvio nas sessões de 1 ação da tabela acima (ex.: `USR-0013`,
+13:05:33→13:06:03): são exatamente 30s de duração, ou seja, 100% gap, 0%
+atividade adicional.
 
 ## Testes
 
@@ -157,6 +164,18 @@ network — nada é mockado. Última execução: `15 passed, 0 failed`.
   programática, via Table API em Python (`streaming/jobs.py`). Não há uma
   sessão interativa via SQL Client exposta para explorar as tabelas
   manualmente.
+- **Cluster Flink distribuído**: o PyFlink aqui roda em modo de execução
+  local (um mini-cluster embutido no próprio processo Python), não um
+  cluster real com JobManager/TaskManager separados. Suficiente para
+  demonstrar a lógica de streaming sem a complexidade operacional de um
+  cluster distribuído de verdade.
+- **Teste de integração end-to-end contra Kafka real**: a suíte de testes
+  roda as mesmas queries de agregação contra uma fonte bounded (CSV, modo
+  batch) em vez de produzir/consumir de um Kafka real — decisão
+  deliberada para manter os testes rápidos e determinísticos (ver seção
+  "Testes" acima e `docs/conceitos_streaming.md`). A prova de que o
+  pipeline funciona de ponta a ponta contra Kafka real está na seção
+  "Exemplo de saída real" acima, mas não é uma automatizada.
 
 (Mesmo tratamento dado à variante AWS/cloud citada nos outros dois
 flagships deste portfólio: evolução planejada, não implementada.)

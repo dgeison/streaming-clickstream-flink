@@ -85,10 +85,13 @@ GROUP BY user_id, window_start, window_end
 Isso responde perguntas do tipo "quanto tempo o USR-0024 navegou antes de
 comprar, numa única visita?" — uma sessão de navegação real, não um recorte
 arbitrário de relógio. No E2E real (ver README), `USR-0024` acumulou 7
-ações e 1 compra de R$399,90 numa sessão contínua de ~64 segundos — se
+ações e 1 compra de R$399,90 numa janela de sessão de ~64 segundos — se
 fosse janela TUMBLE de 1 minuto, essas ações poderiam ter sido cortadas ao
 meio por uma fronteira de relógio arbitrária; com SESSION, a sessão inteira
-do usuário fica junta.
+do usuário fica junta. Note que `sessao_fim` inclui o gap de 30s (é
+`window_end = último evento + gap`, não o timestamp do último evento) — os
+~64s não são todos "navegação ativa", os últimos ~30s são a espera que
+define quando a sessão é considerada encerrada.
 
 ## At-least-once no sink JDBC: o que acontece se o job reiniciar no meio de uma janela
 
@@ -112,6 +115,14 @@ do lado do Flink, o conector JDBC grava em modo append — uma regravação
 depois de um restart não faz upsert silencioso, ela colide com a
 constraint de chave primária do Postgres e o `INSERT` falha com erro de
 chave duplicada.
+
+Outra caixa de decisão silenciosa: a tabela source do Kafka usa
+`'json.ignore-parse-errors' = 'true'` — qualquer mensagem no tópico que
+não seja um JSON válido no formato esperado é **descartada silenciosamente**,
+sem erro, sem log, sem métrica. Escolha deliberada para um pipeline de
+demonstração (um evento malformado não deve derrubar o job todo), mas numa
+pilha de produção real isso normalmente iria para uma dead-letter queue em
+vez de simplesmente desaparecer.
 
 Vale registrar também que, como está configurado hoje
 (`streaming/flink_env.py`), `create_streaming_env()` não habilita
