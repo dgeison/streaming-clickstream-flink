@@ -1,5 +1,3 @@
-import random
-
 USUARIOS = [f"USR-{i:04d}" for i in range(1, 81)]
 DISPOSITIVOS = ["desktop", "mobile", "tablet"]
 REGIOES = ["Sudeste", "Sul", "Nordeste", "Centro-Oeste", "Norte"]
@@ -23,12 +21,54 @@ CATEGORIAS = {
 }
 
 TRANSICOES = {
-    "page_view": {"page_view": 3, "search": 3, "click": 3, "add_to_cart": 1, "purchase": 0, "remove_cart": 0},
-    "search": {"page_view": 1, "search": 1, "click": 6, "add_to_cart": 1, "purchase": 0, "remove_cart": 1},
-    "click": {"page_view": 1, "search": 1, "click": 1, "add_to_cart": 5, "purchase": 0, "remove_cart": 2},
-    "add_to_cart": {"page_view": 2, "search": 1, "click": 2, "add_to_cart": 1, "purchase": 3, "remove_cart": 1},
-    "purchase": {"page_view": 7, "search": 2, "click": 1, "add_to_cart": 0, "purchase": 0, "remove_cart": 0},
-    "remove_cart": {"page_view": 3, "search": 3, "click": 2, "add_to_cart": 1, "purchase": 1, "remove_cart": 0},
+    "page_view": {
+        "page_view": 3,
+        "search": 3,
+        "click": 3,
+        "add_to_cart": 1,
+        "purchase": 0,
+        "remove_cart": 0,
+    },
+    "search": {
+        "page_view": 1,
+        "search": 1,
+        "click": 6,
+        "add_to_cart": 1,
+        "purchase": 0,
+        "remove_cart": 1,
+    },
+    "click": {
+        "page_view": 1,
+        "search": 1,
+        "click": 1,
+        "add_to_cart": 5,
+        "purchase": 0,
+        "remove_cart": 2,
+    },
+    "add_to_cart": {
+        "page_view": 2,
+        "search": 1,
+        "click": 2,
+        "add_to_cart": 1,
+        "purchase": 3,
+        "remove_cart": 1,
+    },
+    "purchase": {
+        "page_view": 7,
+        "search": 2,
+        "click": 1,
+        "add_to_cart": 0,
+        "purchase": 0,
+        "remove_cart": 0,
+    },
+    "remove_cart": {
+        "page_view": 3,
+        "search": 3,
+        "click": 2,
+        "add_to_cart": 1,
+        "purchase": 1,
+        "remove_cart": 0,
+    },
 }
 
 
@@ -60,8 +100,14 @@ def generate_event(user_id, estado, rng, timestamp):
 
     categoria = rng.choice(list(CATEGORIAS.keys()))
     produto = rng.choice(CATEGORIAS[categoria])
-    valor = produto["preco"] if action in ("click", "add_to_cart", "purchase", "remove_cart") else 0.0
-    page = f"/produto/{produto['id'].lower()}" if action in ("click", "add_to_cart") else rng.choice(PAGINAS)
+    valor_actions = ("click", "add_to_cart", "purchase", "remove_cart")
+    valor = produto["preco"] if action in valor_actions else 0.0
+    page_actions = ("click", "add_to_cart")
+    page = (
+        f"/produto/{produto['id'].lower()}"
+        if action in page_actions
+        else rng.choice(PAGINAS)
+    )
 
     atualizar_carrinho(estado, action, produto)
     estado["ultima_acao"] = action

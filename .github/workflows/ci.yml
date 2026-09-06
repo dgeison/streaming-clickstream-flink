@@ -1,0 +1,47 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: stream
+          POSTGRES_PASSWORD: stream
+          POSTGRES_DB: streaming
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stream -d streaming"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      STREAMING_DB_HOST: localhost
+      STREAMING_DB_PORT: "5432"
+      STREAMING_DB_NAME: streaming
+      STREAMING_DB_USER: stream
+      STREAMING_DB_PASSWORD: stream
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "11"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Baixar conectores Flink
+        run: |
+          mkdir -p lib
+          curl -fsSL -o lib/flink-sql-connector-kafka.jar https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.4.0-1.20/flink-sql-connector-kafka-3.4.0-1.20.jar
+          curl -fsSL -o lib/flink-connector-jdbc.jar https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc/3.4.0-1.20/flink-connector-jdbc-3.4.0-1.20.jar
+          curl -fsSL -o lib/postgresql-driver.jar https://repo.maven.apache.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
+      - name: Lint
+        run: flake8 streaming tests run_producer_cli.py run_jobs_cli.py --max-line-length=100
+      - name: Testes
+        run: pytest -v

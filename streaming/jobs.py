@@ -48,9 +48,15 @@ CREATE TABLE sessoes_usuario (
 
 
 def registrar_tabelas(t_env, bootstrap_servers, jdbc_url, username, password):
-    t_env.execute_sql(CLICKSTREAM_SOURCE_DDL.format(bootstrap_servers=bootstrap_servers))
-    t_env.execute_sql(METRICS_SINK_DDL.format(jdbc_url=jdbc_url, username=username, password=password))
-    t_env.execute_sql(SESSIONS_SINK_DDL.format(jdbc_url=jdbc_url, username=username, password=password))
+    t_env.execute_sql(CLICKSTREAM_SOURCE_DDL.format(
+        bootstrap_servers=bootstrap_servers
+    ))
+    t_env.execute_sql(METRICS_SINK_DDL.format(
+        jdbc_url=jdbc_url, username=username, password=password
+    ))
+    t_env.execute_sql(SESSIONS_SINK_DDL.format(
+        jdbc_url=jdbc_url, username=username, password=password
+    ))
 
 
 def rodar_jobs(t_env):
